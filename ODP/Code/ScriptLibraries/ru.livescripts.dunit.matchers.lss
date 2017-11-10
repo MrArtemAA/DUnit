@@ -1,0 +1,148 @@
+'++LotusScript Development Environment:2:5:(Options):0:74
+%REM
+	ru.livescripts.dunit.matchers
+	
+	Created: Oct 13, 2017
+	Author: Artem A Areshko/LiveScripts/RU (Live-Scripts)
+	
+	Description: 
+%END REM
+
+Option Public
+Option Declare
+
+Use "ru.livescripts.dunit.core"
+
+%REM
+	---=== Change Log ===---
+	--- Version: X.X.X; DD.MM.YYYY; Name
+	1. 
+	
+%END REM
+
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare Class SimpleValueMatcher As IMatcher
+Declare Class DocumentItemsMatcher As IMatcher
+
+'++LotusScript Development Environment:2:5:(Declarations):0:10
+Private Const DESIGN = "ru.livescripts.dunit.matchers"
+
+'*** SimpleValueMatcher ***
+%REM
+	Description: 
+%END REM
+Class SimpleValueMatcher As IMatcher
+	
+	Private value1 As Variant
+	Private value2 As Variant
+	
+	'New
+	%REM
+		Description: 
+	%END REM
+	Public Sub New(value1 As Variant, value2 As Variant)
+		On Error GoTo ErrorHandler
+		Const FuncName = "SimpleValueMatcher.New ()"
+		
+		Me.value1 = value1
+		Me.value2 = value2
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+	
+	'Matches
+	%REM
+		Description: 
+	%END REM
+	Public Function Matches() As Boolean
+		On Error GoTo ErrorHandler
+		Const FuncName = "SimpleValueMatcher.Matches ()"
+		
+		Matches = (value1 = value2)
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
+endh:
+	End Function
+
+End Class
+'*** DocumentItemsMatcher ***
+%REM
+	Description: 
+%END REM
+Class DocumentItemsMatcher As IMatcher
+	
+	Private doc1 As NotesDocument
+	Private doc2 As NotesDocument
+	Private itemNames As Variant
+	
+	'New
+	%REM
+		Description:
+			itemNames - array of document item names 
+	%END REM
+	Public Sub New(doc1 As NotesDocument, doc2 As NotesDocument, itemNames As Variant)
+		On Error GoTo ErrorHandler
+		Const FuncName = "DocumentItemsMatcher.New ()"
+		
+		Set Me.doc1 = doc1
+		Set Me.doc2 = doc2
+		Me.itemNames = itemNames
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+	
+	'Matches
+	%REM
+		Description: 
+	%END REM
+	Public Function Matches() As Boolean
+		On Error GoTo ErrorHandler
+		Const FuncName = "DocumentItemsMatcher.Matches ()"
+		
+		ForAll itemName In itemNames
+			Dim item1 As NotesItem
+			Dim item2 As NotesItem
+			
+			Set item1 = doc1.Getfirstitem(Itemname)
+			Set item2 = doc2.Getfirstitem(Itemname)
+			
+			If (item1 Is Nothing And Not item2 Is Nothing) _
+			Or (Not item1 Is Nothing And item2 Is Nothing) Then
+				GoTo endh
+			ElseIf item1 Is Nothing And item2 Is Nothing Then
+				GoTo ReturnTrue
+			ElseIf item1.Type <> item2.Type Then
+				GoTo endh
+			End If
+						
+			Dim value1 As Variant
+			Dim value2 As Variant
+			
+			Set value1 = doc1.Getitemvalue(Itemname)
+			Set value2 = doc2.Getitemvalue(itemName)
+			If UBound(value1) <> UBound(value2) Then GoTo endh
+			
+			Dim i%
+			For i = 0 To UBound(value1)
+				If value1(i) <> value2(i) Then GoTo endh
+			Next
+		End ForAll
+		
+ReturnTrue:
+		Matches = True
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
+endh:
+	End Function
+
+End Class

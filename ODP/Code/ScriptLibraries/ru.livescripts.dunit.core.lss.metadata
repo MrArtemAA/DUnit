@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?><note class="filter" maintenanceversion="1.0" replicaid="432581D400739923" version="9.0" xmlns="http://www.lotus.com/dxl">
+<noteinfo noteid="146" sequence="14" unid="08830D52F4C7683A432581B80034EF78">
+<created><datetime>20171013T123811,76+03</datetime></created>
+<modified><datetime>20171111T000748,11+03</datetime></modified>
+<revised><datetime>20171111T000748,10+03</datetime></revised>
+<lastaccessed><datetime>20171111T000748,11+03</datetime></lastaccessed>
+<addedtofile><datetime>20171111T000240,60+03</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Artem A Areshko/O=LiveScripts/C=RU</name></updatedby>
+<wassignedby><name>CN=Artem A Areshko/O=LiveScripts/C=RU</name></wassignedby>
+<item name="$Flags"><text>s34Q</text></item>
+<item name="$PublicAccess" sign="true"><text>1</text></item>
+<item name="$TITLE" sign="true"><text>ru.livescripts.dunit.core</text></item>
+<item name="$DesignerVersion" sign="true"><text>8.5.3</text></item>
+<item name="$Comment"><text>1.0.0</text></item>
+
+</note>

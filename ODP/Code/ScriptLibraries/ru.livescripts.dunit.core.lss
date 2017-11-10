@@ -1,0 +1,293 @@
+'++LotusScript Development Environment:2:5:(Options):0:74
+%REM
+	ru.livescripts.dunit.core
+	
+	Created: Oct 6, 2017
+	Author: Artem A Areshko/LiveScripts/RU (Live-Scripts)
+	
+	Description: 
+%END REM
+
+Option Public
+Option Declare
+
+%REM
+	---=== Change Log ===---
+	--- Version: X.X.X; DD.MM.YYYY; Name
+	1. 
+	
+%END REM
+
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare Class Assert
+Declare Class IMatcher
+Declare Public Class TestContext
+Declare Class AbstractTest
+Declare Class TestResult
+Declare Static Function Assert() As Assert
+Declare Static Function TestContext() As TestContext
+
+'++LotusScript Development Environment:2:5:(Declarations):0:10
+Private Const DESIGN = "ru.livescripts.dunit.core"
+
+Public Const LS_TEST_ERROR_ASSERT_FAIL = 3999
+
+Public Const LS_TEST_STATUS_NOT_RUNNED = "Not runned"
+Public Const LS_TEST_STATUS_OK = "OK"
+Public Const LS_TEST_STATUS_FAILED = "FAILED"
+
+Private Const LS_TEST_ERRORMSG_ASSERT_FAIL = "Assert failed: "
+
+'*** Assert ***
+%REM
+	Description: 
+%END REM
+Class Assert
+	
+	'AssertTrue
+	%REM
+		Description: 
+	%END REM
+	Public Sub AssertTrue(actual As Boolean)
+		If Not actual Then Call Me.Throwerror("AssertTrue")
+	End Sub
+	
+	'AssertFalse
+	%REM
+		Description: 
+	%END REM
+	Public Sub AssertFalse(actual As Boolean)
+		If actual Then Call Me.Throwerror("AssertFalse")
+	End Sub
+	
+	'AssertEquals
+	%REM
+		Description: 
+	%END REM
+	Public Sub AssertEquals(matcher As IMatcher)
+		On Error GoTo ErrorHandler
+		Const FuncName = "Assert.AssertEquals ()"
+		
+		If Not Matcher.Matches() Then Call Me.Throwerror(funcName)
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+	
+	'AssertError
+	%REM
+		Description: 
+	%END REM
+	Public Sub AssertError(expected As Integer, actual As Variant)
+		If expected <> actual Then Call Me.Throwerror("AssertError")
+	End Sub
+	
+	'ThrowError
+	%REM
+		Description: 
+	%END REM
+	Private Sub ThrowError(assertName As String)
+		Error LS_TEST_ERROR_ASSERT_FAIL, LS_TEST_ERRORMSG_ASSERT_FAIL & Assertname
+	End Sub
+
+End Class
+'*** IMatcher ***
+%REM
+	Description: 
+%END REM
+Class IMatcher
+	
+	'Matches
+	%REM
+		Description: 
+	%END REM
+	Public Function Matches() As Boolean
+	End Function
+
+End Class
+'*** TestContext ***
+%REM
+	Description: 
+%END REM
+Public Class TestContext
+	
+	Private tests List As String
+	
+	'Add
+	%REM
+		Description: 
+	%END REM
+	Public Sub Add(testName As String)
+		On Error GoTo ErrorHandler
+		Const FuncName = "TestContext.Add ()"
+		
+		tests(testName) = LS_TEST_STATUS_NOT_RUNNED
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+	
+	'SetTestStatus
+	%REM
+		Description: 
+	%END REM
+	Public Sub SetTestStatus(testName As String, status As String)
+		On Error GoTo ErrorHandler
+		Const FuncName = "TestContext.SetTestStatus ()"
+		
+		tests(testName) = status
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+	
+	'GetResult
+	%REM
+		Description: 
+	%END REM
+	Public Function GetResult() As TestResult
+		On Error GoTo ErrorHandler
+		Const FuncName = "SetTestStatus.GetResult ()"
+		
+		Dim result As New TestResult()
+		
+		ForAll test In tests
+			result.Total = result.Total + 1
+			Select Case test
+				Case LS_TEST_STATUS_OK
+					result.Success = result.Success + 1
+				Case LS_TEST_STATUS_FAILED
+					result.Failed = result.Failed + 1
+			End Select
+		End ForAll
+		
+		Set GetResult = result
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
+endh:
+	End Function
+
+End Class
+'*** AbstractTest ***
+%REM
+	Description: 
+%END REM
+Class AbstractTest
+	
+	'BeginTest
+	%REM
+		Description: 
+	%END REM
+	Public Sub BeginTest(testName As String)
+		On Error GoTo ErrorHandler
+		Const FuncName = "AbstractTest.BeginTest ()"
+		
+		TestContext().Add(testName)
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+	
+	'EndTest
+	%REM
+		Description: 
+	%END REM
+	Public Sub EndTest(testName As String)
+		On Error GoTo ErrorHandler
+		Const FuncName = "AbstractTest.EndTest ()"
+		
+		Call TestContext().SetTestStatus(Testname, LS_TEST_STATUS_OK)
+		Print testName & ": " & LS_TEST_STATUS_OK
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+
+End Class
+'*** TestResult ***
+%REM
+	Description: 
+%END REM
+Class TestResult
+	
+	Public Total As Integer
+	Public Success As Integer
+	Public Failed As Integer
+	
+	'New
+	%REM
+		Description: 
+	%END REM
+	Public Sub New()
+		On Error GoTo ErrorHandler
+		Const FuncName = "TestResult.New ()"
+		
+		Total = 0
+		Success = 0
+		Failed = 0
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+
+End Class
+'++LotusScript Development Environment:2:1:Assert:5:8
+'Assert
+%REM
+	Description: 
+%END REM
+Static Function Assert() As Assert
+	On Error GoTo ErrorHandler
+	Const FuncName = "Assert ()"
+	
+	Static this As Assert
+	
+	If this Is Nothing Then
+		Set this = New Assert()
+	End If
+	
+	Set Assert = this
+	
+	GoTo endh
+ErrorHandler:
+	Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
+endh:
+End Function
+
+'++LotusScript Development Environment:2:1:TestContext:5:8
+'TestContext
+%REM
+	Description: 
+%END REM
+Static Function TestContext() As TestContext
+	On Error GoTo ErrorHandler
+	Const FuncName = "TestContext ()"
+	
+	Static this As TestContext
+	
+	If this Is Nothing Then
+		Set this = New TestContext()
+	End If
+	
+	Set TestContext = this
+	
+	GoTo endh
+ErrorHandler:
+	Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
+endh:
+End Function
+
