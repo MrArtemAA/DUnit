@@ -51,4 +51,10 @@ endh:
 ```
 
 ## Running tests
-To run tests, copy template agent TestRunner from DUnit project database.
+To run tests:
+1. copy template agent TestRunner from DUnit project database,
+2. implement DoRunTests Sub. All nessesary surrounding code is already written, just instantiate your test class (```Set demoTest = New DemoTest()```) and call test methods (```Call demoTest.TestSub()```)
+
+### Tests summary and logs
+After running tests in status bar you'll see tests summary: total, successful and failed tests.
+Detialed information can be found in log file, which is saved (be default) in TEMP directory. Lof file location and name is printed in status bar right before test summary. You can change location. where file is saved by overriding ```Private Sub Initialize()``` of AbstractTestRunner (see default implementation for more information)
