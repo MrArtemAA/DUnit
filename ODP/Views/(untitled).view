@@ -1,11 +1,11 @@
 <?xml version='1.0' encoding='utf-8'?>
 <note default='true' class='view' xmlns='http://www.lotus.com/dxl' version='9.0'
  maintenanceversion='1.0' replicaid='432581D400739923'>
-<noteinfo noteid='11e' unid='905A93A0E41925EA432581B80034D24E' sequence='2'>
+<noteinfo noteid='11e' unid='905A93A0E41925EA432581B80034D24E' sequence='4'>
 <created><datetime>20171013T123657,10+03</datetime></created>
-<modified><datetime>20171111T000748,17+03</datetime></modified>
-<revised><datetime>20171111T000748,16+03</datetime></revised>
-<lastaccessed><datetime>20171111T000748,17+03</datetime></lastaccessed>
+<modified><datetime>20171114T115058,62+03</datetime></modified>
+<revised><datetime>20171114T115058,61+03</datetime></revised>
+<lastaccessed><datetime>20171114T115058,62+03</datetime></lastaccessed>
 <addedtofile><datetime>20171111T000240,19+03</datetime></addedtofile></noteinfo>
 <updatedby><name>CN=Artem A Areshko/O=LiveScripts/C=RU</name></updatedby>
 <wassignedby><name>CN=Artem A Areshko/O=LiveScripts/C=RU</name></wassignedby>

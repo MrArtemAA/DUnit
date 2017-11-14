@@ -1,0 +1,84 @@
+'++LotusScript Development Environment:2:5:(Options):0:74
+%REM
+	ru.livescripts.dunit.demo
+	
+	Created: Nov 13, 2017
+	Author Artem A Areshko/LiveScripts/RU (Live-Scripts)
+	
+	Description: 
+%END REM
+
+Option Public
+Option Declare
+
+%Include "lsconst.lss"
+
+Use "ru.livescripts.dunit.matchers"
+
+%REM
+	---=== Change Log ===---
+	--- Version: X.X.X; DD.MM.YYYY; Name
+	1. 
+	
+%END REM
+
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare Class DemoTest As AbstractTest
+
+'++LotusScript Development Environment:2:5:(Declarations):0:10
+Private Const DESIGN = "ru.livescripts.dunit.demo"
+
+'*** DemoTest ***
+%REM
+	Description: 
+%END REM
+Class DemoTest As AbstractTest
+	
+	'AssertTest
+	%REM
+		Description: 
+	%END REM
+	Public Sub TestAssertExample()
+		On Error GoTo ErrorHandler
+		Const FuncName = "DemoTest.TestAssertExample ()"
+		
+		Call Me.BeginTest(funcName)
+		
+		Call Assert.True(1 = 1)
+		
+		Dim simpleValueMatcher As New SimpleValueMatcher(1, 1)
+		Call Assert.Equals(simpleValueMatcher)
+		
+		Call Me.EndTest(funcName)
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+	
+	'TestAssertErrorExample
+	%REM
+		Description: 
+	%END REM
+	Public Sub TestAssertErrorExample()
+		On Error GoTo ErrorHandler
+		Const FuncName = "DemoTest.TestAssertErrorExample ()"
+		
+		Call Me.BeginTest(funcName)
+		
+		Const TEST_ERROR_CODE = 5000
+		
+		On Error TEST_ERROR_CODE GoTo AssertErrorHandler
+		Error TEST_ERROR_CODE, "Test assert error"
+		
+		GoTo endh
+AssertErrorHandler:
+		Call Me.EndTest(funcName)
+		Resume endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+
+End Class

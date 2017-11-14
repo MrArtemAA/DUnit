@@ -13,8 +13,25 @@ Option Declare
 
 %REM
 	---=== Change Log ===---
-	--- Version: X.X.X; DD.MM.YYYY; Name
-	1. 
+	--- Version: 1.1.0; 12.11.2017; Artem Areshko
+	1. Added consts
+		LS_TEST_ERROR_MATCHER_PARAM
+		LS_TEST_ERROR_OTHER
+	
+	2. Renamed methods for Assert class
+		AssertTrue -> True
+		AssertFalse -> False
+		AssertEquals -> Equals
+		
+	3. Added methods
+		Assert.NotNothing()
+		TestContext.InitLog()
+		TextContext.Log()
+		TextContext.CloseLog()
+	
+	4. Deleted method Assert.AssertError()
+	
+	5. Added class AbstractTestRunner
 	
 %END REM
 
@@ -24,6 +41,7 @@ Declare Class IMatcher
 Declare Public Class TestContext
 Declare Class AbstractTest
 Declare Class TestResult
+Declare Class AbstractTestRunner
 Declare Static Function Assert() As Assert
 Declare Static Function TestContext() As TestContext
 
@@ -31,6 +49,8 @@ Declare Static Function TestContext() As TestContext
 Private Const DESIGN = "ru.livescripts.dunit.core"
 
 Public Const LS_TEST_ERROR_ASSERT_FAIL = 3999
+Public Const LS_TEST_ERROR_MATCHER_PARAM = 3998
+Public Const LS_TEST_ERROR_OTHER = 3997
 
 Public Const LS_TEST_STATUS_NOT_RUNNED = "Not runned"
 Public Const LS_TEST_STATUS_OK = "OK"
@@ -38,35 +58,36 @@ Public Const LS_TEST_STATUS_FAILED = "FAILED"
 
 Private Const LS_TEST_ERRORMSG_ASSERT_FAIL = "Assert failed: "
 
+
 '*** Assert ***
 %REM
 	Description: 
 %END REM
 Class Assert
 	
-	'AssertTrue
+	'True
 	%REM
 		Description: 
 	%END REM
-	Public Sub AssertTrue(actual As Boolean)
-		If Not actual Then Call Me.Throwerror("AssertTrue")
+	Public Sub True(actual As Boolean)
+		If Not actual Then Call Me.Throwerror("True")
 	End Sub
 	
-	'AssertFalse
+	'False
 	%REM
 		Description: 
 	%END REM
-	Public Sub AssertFalse(actual As Boolean)
-		If actual Then Call Me.Throwerror("AssertFalse")
+	Public Sub False(actual As Boolean)
+		If actual Then Call Me.Throwerror("False")
 	End Sub
 	
-	'AssertEquals
+	'Equals
 	%REM
 		Description: 
 	%END REM
-	Public Sub AssertEquals(matcher As IMatcher)
+	Public Sub Equals(matcher As IMatcher)
 		On Error GoTo ErrorHandler
-		Const FuncName = "Assert.AssertEquals ()"
+		Const FuncName = "Assert.Equals ()"
 		
 		If Not Matcher.Matches() Then Call Me.Throwerror(funcName)
 		
@@ -76,12 +97,23 @@ ErrorHandler:
 endh:
 	End Sub
 	
-	'AssertError
+	'NotNothing
 	%REM
 		Description: 
 	%END REM
-	Public Sub AssertError(expected As Integer, actual As Variant)
-		If expected <> actual Then Call Me.Throwerror("AssertError")
+	Public Sub NotNothing(actual As Variant)
+		On Error GoTo ErrorHandler
+		Const FuncName = "Assert.NotNothing ()"
+		
+		If Not IsObject(actual) Then
+			Error LS_TEST_ERROR_OTHER, {actual is not an object}
+		End If
+		If actual Is Nothing Then Call Me.Throwerror("NotNothing")
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
+endh:
 	End Sub
 	
 	'ThrowError
@@ -114,6 +146,10 @@ End Class
 Public Class TestContext
 	
 	Private tests List As String
+	
+	Private stream As NotesStream
+	Private logFolder As String
+	Private logFileName As String
 	
 	'Add
 	%REM
@@ -153,7 +189,7 @@ endh:
 	%END REM
 	Public Function GetResult() As TestResult
 		On Error GoTo ErrorHandler
-		Const FuncName = "SetTestStatus.GetResult ()"
+		Const FuncName = "TestContext.GetResult ()"
 		
 		Dim result As New TestResult()
 		
@@ -174,6 +210,63 @@ ErrorHandler:
 		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
 endh:
 	End Function
+	
+	'InitLog
+	%REM
+		Description: 
+	%END REM
+	Public Sub InitLog(logFolder As String)
+		On Error GoTo ErrorHandler
+		Const FuncName = "TestContext.InitLog ()"
+		
+		Dim session As New NotesSession
+		Set stream = session.Createstream()
+		
+		Me.logFolder = logFolder
+		If Me.logFolder = "" Then
+			Me.logFolder = Environ("TEMP")
+		End If
+		logFileName = Me.logFolder & "\" & Format(Now, "yyyy_mm_dd hh_mm_ss") & ".txt"
+		Call stream.Open(logFileName, "UTF-8")
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+	
+	'CloseLog
+	%REM
+		Description: 
+	%END REM
+	Public Sub CloseLog()
+		On Error GoTo ErrorHandler
+		Const FuncName = "TestContext.CloseLog ()"
+		
+		Call stream.Close()		
+		Print "Test detials saved to: " & logFileName
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+	
+	'Log
+	%REM
+		Description: 
+	%END REM
+	Public Sub Log(message As String)
+		On Error GoTo ErrorHandler
+		Const FuncName = "TestContext.Log ()"
+		
+		Call stream.Writetext(message, EOL_PLATFORM)
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
+endh:
+	End Sub
 
 End Class
 '*** AbstractTest ***
@@ -206,8 +299,8 @@ endh:
 		On Error GoTo ErrorHandler
 		Const FuncName = "AbstractTest.EndTest ()"
 		
-		Call TestContext().SetTestStatus(Testname, LS_TEST_STATUS_OK)
-		Print testName & ": " & LS_TEST_STATUS_OK
+		Call TestContext.SetTestStatus(Testname, LS_TEST_STATUS_OK)
+		Call TestContext.Log(testName & ": " & LS_TEST_STATUS_OK)
 		
 		GoTo endh
 ErrorHandler:
@@ -237,6 +330,154 @@ Class TestResult
 		Total = 0
 		Success = 0
 		Failed = 0
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+
+End Class
+'*** AbstractTestRunner ***
+%REM
+	Description: 
+%END REM
+Class AbstractTestRunner
+	
+	'New
+	%REM
+		Description: 
+	%END REM
+	Public Sub New()
+		On Error GoTo ErrorHandler
+		Const FuncName = "AbstractTestRunner.New ()"
+		
+		Call Me.Initialize()
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+	
+	'Initialize
+	%REM
+		Description: 
+	%END REM
+	Private Sub Initialize()
+		On Error GoTo ErrorHandler
+		Const FuncName = "AbstractTestRunner.Initialize ()"
+		
+		Call TestContext.Initlog("")
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+	
+	'Run
+	%REM
+		Description: 
+	%END REM
+	Public Function Run()
+		On Error GoTo ErrorHandler
+		Const FuncName = "AbstractTestRunner.Run ()"
+		
+		Call TestContext.Log("Started running tests at " & Now)
+		Call TestContext.Log("----------------------------------")
+		
+		Call Me.DoRunTests()
+		
+		Call TestContext.Log("----------------------------------")
+		Call TestContext.Log("Finished tests at " & Now)
+		Call TestContext.Log("----------------------------------")
+		
+		Call Me.PrintResult()		
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
+endh:
+	End Function
+	
+	'RunTests
+	%REM
+		Description: 
+	%END REM
+	Private Sub DoRunTests()
+		On Error GoTo ErrorHandler
+		Const FuncName = "AbstractTestRunner.RunTests ()"
+		
+		'Override
+		
+		GoTo endh
+ErrorHandler:
+		Call Me.TestFailed(Error$)
+		Resume Next
+endh:
+	End Sub
+	
+	'TestFailed
+	%REM
+		Description: 
+	%END REM
+	Private Sub TestFailed(stackTraceString As String)
+		On Error GoTo ErrorHandler
+		Const FuncName = "AbstractTestRunner.TestFailed ()"
+		
+		Dim testName As String
+		
+		testName = Me.GetTestName(Error$)
+		Call TestContext.SetTestStatus(testName, LS_TEST_STATUS_FAILED)
+		Call TestContext.Log(testName & ": " & LS_TEST_STATUS_FAILED)
+		
+		Dim stackTrace As Variant
+		stackTrace = Split(stackTraceString, Chr(10))
+		ForAll elem In stackTrace
+			Print elem	
+		End ForAll
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+	
+	'GetTestName
+	%REM
+		Description: 
+	%END REM
+	Private Function GetTestName(errorString As String)
+		On Error GoTo ErrorHandler
+		Const FuncName = "AbstractTestRunner.GetTestName ()"
+		
+		GetTestName = StrRight(StrLeft(errorString$, ","), ") ")
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
+endh:
+	End Function
+	
+	'PrintResult
+	%REM
+		Description: 
+	%END REM
+	Private Sub PrintResult()
+		On Error GoTo ErrorHandler
+		Const FuncName = "AbstractTestRunner.PrintResult ()"
+		
+		Dim result As TestResult
+		
+		Set result = TestContext.GetResult()
+		
+		Dim summary As String
+		summary = "Tests summary. Total: " & result.Total & "; Success: " & _
+		result.Success & "; Failed: " & result.Failed
+		
+		Call TestContext.Log(summary)
+		Print summary		
 		
 		GoTo endh
 ErrorHandler:
@@ -290,4 +531,11 @@ ErrorHandler:
 	Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
 endh:
 End Function
+
+
+
+
+
+
+
 
