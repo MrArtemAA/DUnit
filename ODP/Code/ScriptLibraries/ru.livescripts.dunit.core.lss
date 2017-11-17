@@ -13,6 +13,15 @@ Option Declare
 
 %REM
 	---=== Change Log ===---
+	--- Version: 1.1.1; 18.11.2017; Artem Areshko
+	1. Modified 
+		AbstractTestRunner.TestFailed()
+			Bug: was print instead of TestContext.Log()
+		TestContext.CloseLog()
+			Spelling mistake
+		AbstractTestRunner.PrintResult()
+			Added log closing
+	
 	--- Version: 1.1.0; 12.11.2017; Artem Areshko
 	1. Added consts
 		LS_TEST_ERROR_MATCHER_PARAM
@@ -244,7 +253,7 @@ endh:
 		Const FuncName = "TestContext.CloseLog ()"
 		
 		Call stream.Close()		
-		Print "Test detials saved to: " & logFileName
+		Print "Test details saved to: " & logFileName
 		
 		GoTo endh
 ErrorHandler:
@@ -393,7 +402,7 @@ endh:
 		Call TestContext.Log("Finished tests at " & Now)
 		Call TestContext.Log("----------------------------------")
 		
-		Call Me.PrintResult()		
+		Call Me.PrintResult()
 		
 		GoTo endh
 ErrorHandler:
@@ -435,7 +444,7 @@ endh:
 		Dim stackTrace As Variant
 		stackTrace = Split(stackTraceString, Chr(10))
 		ForAll elem In stackTrace
-			Print elem	
+			Call TestContext.Log(CStr(elem))	
 		End ForAll
 		
 		GoTo endh
@@ -477,6 +486,7 @@ endh:
 		result.Success & "; Failed: " & result.Failed
 		
 		Call TestContext.Log(summary)
+		Call TestContext.Closelog()
 		Print summary		
 		
 		GoTo endh
@@ -531,6 +541,8 @@ ErrorHandler:
 	Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
 endh:
 End Function
+
+
 
 
 
