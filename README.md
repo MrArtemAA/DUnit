@@ -28,6 +28,8 @@ ErrorHandler:
 endh:
 ```
 
+Use [asserts](/docs/en/Asserts.md) to check your values.
+
 ### Testing exceptions (errors)
 Surround your test code with
 ```
