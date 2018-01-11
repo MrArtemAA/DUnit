@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?><note class="filter" maintenanceversion="1.0" replicaid="432581D400739923" version="9.0" xmlns="http://www.lotus.com/dxl">
-<noteinfo noteid="152" sequence="37" unid="9DB8DE648E0BA3F3432581B800357B0C">
+<noteinfo noteid="152" sequence="47" unid="9DB8DE648E0BA3F3432581B800357B0C">
 <created><datetime>20171013T124409,08+03</datetime></created>
-<modified><datetime>20171114T115058,53+03</datetime></modified>
-<revised><datetime>20171114T115058,52+03</datetime></revised>
-<lastaccessed><datetime>20171114T115058,53+03</datetime></lastaccessed>
+<modified><datetime>20180111T202252,56+03</datetime></modified>
+<revised><datetime>20180111T202252,55+03</datetime></revised>
+<lastaccessed><datetime>20180111T202252,56+03</datetime></lastaccessed>
 <addedtofile><datetime>20171111T000240,64+03</datetime></addedtofile></noteinfo>
 <updatedby><name>CN=Artem A Areshko/O=LiveScripts/C=RU</name></updatedby>
 <wassignedby><name>CN=Artem A Areshko/O=LiveScripts/C=RU</name></wassignedby>
@@ -11,6 +11,6 @@
 <item name="$PublicAccess" sign="true"><text>1</text></item>
 <item name="$TITLE" sign="true"><text>ru.livescripts.dunit.matchers</text></item>
 <item name="$DesignerVersion" sign="true"><text>8.5.3</text></item>
-<item name="$Comment"><text>1.1.0</text></item>
 
-</note>
+
+<item name="$Comment"><text>1.1.1</text></item></note>
