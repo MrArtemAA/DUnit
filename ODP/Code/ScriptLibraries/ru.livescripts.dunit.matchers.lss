@@ -15,6 +15,13 @@ Use "ru.livescripts.dunit.core"
 
 %REM
 	---=== Change Log ===---
+	--- Version: 1.1.0; 11.01.2018; Artem Areshko
+	1. Modified DocumentItemsMatcher.Matches()
+		Fixed error in getting value from item
+		
+	2. Modified DatabaseMatcher.Matches()
+		Added server name comparison
+	
 	--- Version: 1.1.0; 12.11.2017; Artem Areshko
 	1. Added classes
 		DatabaseMatcher
@@ -138,8 +145,8 @@ endh:
 			Dim value1 As Variant
 			Dim value2 As Variant
 			
-			Set value1 = doc1.Getitemvalue(Itemname)
-			Set value2 = doc2.Getitemvalue(itemName)
+			value1 = doc1.Getitemvalue(Itemname)
+			value2 = doc2.Getitemvalue(itemName)
 			If UBound(value1) <> UBound(value2) Then GoTo endh
 			
 			Dim i%
@@ -195,7 +202,11 @@ endh:
 		On Error GoTo ErrorHandler
 		Const FuncName = "DatabaseMatcher.Matches ()"
 		
-		If db1.Replicaid <> db2.Replicaid Or _
+		Dim dbServer1 As New NotesName(db1.Server)
+		Dim dbServer2 As New NotesName(db2.Server)
+		
+		If LCase(dbServer1.Canonical) <> LCase(dbServer2.Canonical) Or _
+		db1.Replicaid <> db2.Replicaid Or _
 		db1.Filepath <> db2.Filepath Or _
 		db1.Title <> db2.Title Then GoTo endh
 		

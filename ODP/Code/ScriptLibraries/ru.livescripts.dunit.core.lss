@@ -410,13 +410,13 @@ ErrorHandler:
 endh:
 	End Function
 	
-	'RunTests
+	'DoRunTests
 	%REM
 		Description: 
 	%END REM
 	Private Sub DoRunTests()
 		On Error GoTo ErrorHandler
-		Const FuncName = "AbstractTestRunner.RunTests ()"
+		Const FuncName = "AbstractTestRunner.DoRunTests ()"
 		
 		'Override
 		
@@ -541,6 +541,7 @@ ErrorHandler:
 	Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
 endh:
 End Function
+
 
 
 
