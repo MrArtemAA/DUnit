@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?><note class="filter" maintenanceversion="1.0" replicaid="432581D400739923" version="9.0" xmlns="http://www.lotus.com/dxl">
-<noteinfo noteid="182" sequence="36" unid="F0152E0022E66468432581D6004117E0">
+<noteinfo noteid="182" sequence="80" unid="F0152E0022E66468432581D6004117E0">
 <created><datetime>20171112T145059,52+03</datetime></created>
-<modified><datetime>20171118T012005,71+03</datetime></modified>
-<revised><datetime>20171118T012005,70+03</datetime></revised>
-<lastaccessed><datetime>20171118T012005,71+03</datetime></lastaccessed>
+<modified><datetime>20180409T190603,15+03</datetime></modified>
+<revised><datetime>20180409T190603,14+03</datetime></revised>
+<lastaccessed><datetime>20180409T190603,15+03</datetime></lastaccessed>
 <addedtofile><datetime>20171112T145059,58+03</datetime></addedtofile></noteinfo>
 <updatedby><name>CN=Artem A Areshko/O=LiveScripts/C=RU</name></updatedby>
 <wassignedby><name>CN=Artem A Areshko/O=LiveScripts/C=RU</name></wassignedby>
@@ -13,4 +13,4 @@
 <item name="$Flags"><text>s34Q</text></item>
 
 
-<item name="$Comment"><text>1.1.1</text></item></note>
+<item name="$Comment"><text>1.2.0</text></item></note>
