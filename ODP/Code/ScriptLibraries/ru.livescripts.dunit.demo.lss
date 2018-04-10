@@ -11,8 +11,6 @@
 Option Public
 Option Declare
 
-%Include "lsconst.lss"
-
 Use "ru.livescripts.dunit.matchers"
 
 %REM
@@ -33,6 +31,12 @@ Private Const DESIGN = "ru.livescripts.dunit.demo"
 	Description: 
 %END REM
 Class DemoTest As AbstractTest
+	
+	Private session As NotesSession
+	
+	Public Sub New()
+		Set session = New NotesSession
+	End Sub
 	
 	'AssertTest
 	%REM
@@ -78,6 +82,221 @@ AssertErrorHandler:
 		Resume endh
 ErrorHandler:
 		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+	
+	Public Sub TestCodeErrorExample()
+		On Error GoTo ErrorHandler
+		Const FuncName = "DemoTest.TestCodeErrorExample ()"
+		
+		Call Me.BeginTest(funcName)
+		
+		Error 5000, "Test error in code"
+		
+		Call Me.EndTest(funcName)
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", стр. " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+	
+	Public Sub TestAssertFailureExample()
+		On Error GoTo ErrorHandler
+		Const FuncName = "DemoTest.TestAssertFailureExample ()"
+		
+		Call Me.BeginTest(funcName)
+		
+		Call Assert.Equals(MatcherFactory.Arraysimplevalue(Evaluate({1 : 2 : 3}), Evaluate({1 : 2 : 4})))
+		
+		Call Me.EndTest(funcName)
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", стр. " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+	
+	Public Sub TestDatabaseMatcher()
+		On Error GoTo ErrorHandler
+		Const FuncName = "DemoTest.TestDatabaseMatcher ()"
+		
+		Call Me.BeginTest(funcName)
+		
+		Dim localSession As New NotesSession
+		Dim matcher As New DatabaseMatcher(session.Currentdatabase, localSession.Currentdatabase)
+		Call Assert.Equals(matcher)
+		
+		Call Me.EndTest(funcName)
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", стр. " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+	
+	Public Sub TestDatabaseMatcherFailure()
+		On Error GoTo ErrorHandler
+		Const FuncName = "DemoTest.TestDatabaseMatcherFailure ()"
+		
+		Call Me.BeginTest(funcName)
+		
+		Dim ab As NotesDatabase
+		ForAll addressBook In session.Addressbooks
+			If addressBook.IsPublicAddressBook Then
+				Set ab = Addressbook
+				Call ab.Open(ab.Server, ab.Filepath)
+			End If
+		End ForAll
+		
+		Dim matcher As New DatabaseMatcher(session.Currentdatabase, ab)
+		Call Assert.Equals(matcher)
+		
+		Call Me.EndTest(funcName)
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", стр. " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+	
+	Public Sub TestDocumentItemsMatcher()
+		On Error GoTo ErrorHandler
+		Const FuncName = "DemoTest.TestDocumentItemsMatcher ()"
+		
+		Call Me.BeginTest(funcName)
+		
+		Dim document1 As New NotesDocument(session.Currentdatabase)
+		Dim document2 As New NotesDocument(session.Currentdatabase)
+		
+		Call document1.Replaceitemvalue("Item1", "Value1")
+		Call document1.Replaceitemvalue("Item2", "Value2")
+		
+		Call document2.Replaceitemvalue("Item1", "Value1")		
+		Call document2.Replaceitemvalue("Item2", "Value2")
+		
+		Dim matcher As New DocumentItemsMatcher(document1, document2, Evaluate({"Item1" : "Item2" : "Item3"}))
+		Call Assert.Equals(Matcher)
+		
+		Call Me.EndTest(funcName)
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", стр. " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+	
+	Public Sub TestDocumentItemsMatcherFailureValues()
+		On Error GoTo ErrorHandler
+		Const FuncName = "DemoTest.TestDocumentItemsMatcherFailureValues ()"
+		
+		Call Me.BeginTest(funcName)
+		
+		Dim document1 As New NotesDocument(session.Currentdatabase)
+		Dim document2 As New NotesDocument(session.Currentdatabase)
+		
+		Call document1.Replaceitemvalue("Item1", "Value1")
+		Call document1.Replaceitemvalue("Item2", "Value2")
+		
+		Call document2.Replaceitemvalue("Item1", "Value1")		
+		Call document2.Replaceitemvalue("Item2", "Value3")
+		
+		Dim matcher As New DocumentItemsMatcher(document1, document2, Evaluate({"Item1" : "Item2" : "Item3"}))
+		Call Assert.Equals(Matcher)
+		
+		Call Me.EndTest(funcName)
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", стр. " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+	
+	Public Sub TestDocumentItemsMatcherFailureItemNames()
+		On Error GoTo ErrorHandler
+		Const FuncName = "DemoTest.TestDocumentItemsMatcherFailureItemNames ()"
+		
+		Call Me.BeginTest(funcName)
+		
+		Dim document1 As New NotesDocument(session.Currentdatabase)
+		Dim document2 As New NotesDocument(session.Currentdatabase)
+		
+		Call document1.Replaceitemvalue("Item1", "Value1")
+		Call document1.Replaceitemvalue("Item2", "Value2")
+		
+		Call document2.Replaceitemvalue("Item1", "Value1")		
+		Call document2.Replaceitemvalue("Item3", "Value2")
+		
+		Dim matcher As New DocumentItemsMatcher(document1, document2, Evaluate({"Item1" : "Item2"}))
+		Call Assert.Equals(Matcher)
+		
+		Call Me.EndTest(funcName)
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", стр. " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+	
+	Public Sub TestDocumentItemsMatcherFailureItems()
+		On Error GoTo ErrorHandler
+		Const FuncName = "DemoTest.TestDocumentItemsMatcherFailureItems ()"
+		
+		Call Me.BeginTest(funcName)
+		
+		Dim document1 As New NotesDocument(session.Currentdatabase)
+		Dim document2 As New NotesDocument(session.Currentdatabase)
+		
+		Call document1.Replaceitemvalue("Item1", "Value1")
+		Call document1.Replaceitemvalue("Item2", "Value2")
+		
+		Call document2.Replaceitemvalue("Item1", "Value1")
+		
+		Dim matcher As New DocumentItemsMatcher(document1, document2, Evaluate({"Item1" : "Item2"}))
+		Call Assert.Equals(Matcher)
+		
+		Call Me.EndTest(funcName)
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", стр. " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+	
+	Public Sub TestDocumentMatcher()
+		On Error GoTo ErrorHandler
+		Const FuncName = "DemoTest.TestDocumentMatcher ()"
+		
+		Call Me.BeginTest(funcName)
+		
+		Dim document As New NotesDocument(session.Currentdatabase)
+		Dim matcher As New DocumentMatcher(document, document)
+		Call Assert.Equals(Matcher)
+		
+		Call Me.EndTest(funcName)
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", стр. " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+	
+	Public Sub TestDocumentMatcherFalure()
+		On Error GoTo ErrorHandler
+		Const FuncName = "DemoTest.TestDocumentMatcherFalure ()"
+		
+		Call Me.BeginTest(funcName)
+		
+		Dim document1 As New NotesDocument(session.Currentdatabase)
+		Dim document2 As New NotesDocument(session.Currentdatabase)
+		Dim matcher As New DocumentMatcher(document1, document2)
+		Call Assert.Equals(Matcher)
+		
+		Call Me.EndTest(funcName)
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", стр. " & Erl & Chr(10) & Error$
 endh:
 	End Sub
 

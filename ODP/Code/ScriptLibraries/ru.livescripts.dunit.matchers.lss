@@ -15,6 +15,19 @@ Use "ru.livescripts.dunit.core"
 
 %REM
 	---=== Change Log ===---
+	--- Version: 2.0.0; 09.04.2018; Artem Areshko
+	1. Added
+		SimpleValueMatcher.GetExpectedAndActualAsString()
+		DatabaseMatcher.GetExpectedAndActualAsString()
+		DocumentItemsMatcher.GetExpectedAndActualAsString()
+		DocumentMatcher.GetExpectedAndActualAsString()
+		ArraySimpleValueMatcher
+		MatcherFactory class and static function for access
+		
+	2. Modified
+		SimpleValueMatcher.New() - illegal argument errors
+		DocumentItemsMatcher.Matches() - bug fix
+	
 	--- Version: 1.1.0; 11.01.2018; Artem Areshko
 	1. Modified DocumentItemsMatcher.Matches()
 		Fixed error in getting value from item
@@ -37,30 +50,32 @@ Declare Class SimpleValueMatcher As IMatcher
 Declare Class DocumentItemsMatcher As IMatcher
 Declare Class DatabaseMatcher As IMatcher
 Declare Class DocumentMatcher As IMatcher
+Declare Class MatcherFactory
+Declare Class ArraySimpleValueMatcher As IMatcher
+Declare Static Public Function MatcherFactory() As MatcherFactory
 
 '++LotusScript Development Environment:2:5:(Declarations):0:10
 Private Const DESIGN = "ru.livescripts.dunit.matchers"
 
-
-'*** SimpleValueMatcher ***
-%REM
-	Description: 
-%END REM
 Class SimpleValueMatcher As IMatcher
 	
-	Private value1 As Variant
-	Private value2 As Variant
+	Private expected As Variant
+	Private actual As Variant
 	
-	'New
-	%REM
-		Description: 
-	%END REM
-	Public Sub New(value1 As Variant, value2 As Variant)
+	Public Sub New(expected As Variant, actual As Variant)
 		On Error GoTo ErrorHandler
 		Const FuncName = "SimpleValueMatcher.New ()"
 		
-		Me.value1 = value1
-		Me.value2 = value2
+		If IsObject(expected) Or IsArray(expected) Then
+			Error LS_TEST_ERROR_MATCHER_PARAM, {expected is not a simple value.}
+		End If
+		
+		If IsObject(actual) Or IsArray(actual) Then
+			Error LS_TEST_ERROR_MATCHER_PARAM, {actual is not a simple value.}
+		End If
+		
+		Me.expected = expected
+		Me.actual = actual
 		
 		GoTo endh
 ErrorHandler:
@@ -68,48 +83,45 @@ ErrorHandler:
 endh:
 	End Sub
 	
-	'Matches
-	%REM
-		Description: 
-	%END REM
 	Public Function Matches() As Boolean
 		On Error GoTo ErrorHandler
 		Const FuncName = "SimpleValueMatcher.Matches ()"
 		
-		Matches = (value1 = value2)
+		Matches = (expected = actual)
 		
 		GoTo endh
 ErrorHandler:
 		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
 endh:
 	End Function
+	
+	Public Function GetExpectedAndActualAsString() As String
+		GetExpectedAndActualAsString = "Expected: " & expected & Chr(10) & "Actual: " & actual
+	End Function
 
 End Class
-'*** DocumentItemsMatcher ***
-%REM
-	Description: 
-%END REM
 Class DocumentItemsMatcher As IMatcher
 	
-	Private doc1 As NotesDocument
-	Private doc2 As NotesDocument
+	Private expected As NotesDocument
+	Private actual As NotesDocument
 	Private itemNames As Variant
 	
-	'New
+	Private failedItemName As String
+	
 	%REM
 		Description:
 			itemNames - array of document item names 
 	%END REM
-	Public Sub New(doc1 As NotesDocument, doc2 As NotesDocument, itemNames As Variant)
+	Public Sub New(expected As NotesDocument, actual As NotesDocument, itemNames As Variant)
 		On Error GoTo ErrorHandler
 		Const FuncName = "DocumentItemsMatcher.New ()"
 		
-		If doc1 Is Nothing Then Error LS_TEST_ERROR_MATCHER_PARAM, {doc1 is Nothing}
-		If doc2 Is Nothing Then Error LS_TEST_ERROR_MATCHER_PARAM, {doc2 is Nothing}
+		If expected Is Nothing Then Error LS_TEST_ERROR_MATCHER_PARAM, {expected is Nothing}
+		If actual Is Nothing Then Error LS_TEST_ERROR_MATCHER_PARAM, {actual is Nothing}
 		If Not IsArray(itemNames) Then Error LS_TEST_ERROR_MATCHER_PARAM, {itemNames must be an array}
 		
-		Set Me.doc1 = doc1
-		Set Me.doc2 = doc2
+		Set Me.expected = expected
+		Set Me.actual = actual
 		Me.itemNames = itemNames
 		
 		GoTo endh
@@ -118,44 +130,49 @@ ErrorHandler:
 endh:
 	End Sub
 	
-	'Matches
-	%REM
-		Description: 
-	%END REM
 	Public Function Matches() As Boolean
 		On Error GoTo ErrorHandler
 		Const FuncName = "DocumentItemsMatcher.Matches ()"
 		
 		ForAll itemName In itemNames
-			Dim item1 As NotesItem
-			Dim item2 As NotesItem
+			Dim expectedItem As NotesItem
+			Dim actualItem As NotesItem
 			
-			Set item1 = doc1.Getfirstitem(Itemname)
-			Set item2 = doc2.Getfirstitem(Itemname)
+			Set expectedItem = expected.Getfirstitem(Itemname)
+			Set actualItem = actual.Getfirstitem(Itemname)
 			
-			If (item1 Is Nothing And Not item2 Is Nothing) _
-			Or (Not item1 Is Nothing And item2 Is Nothing) Then
+			If (expectedItem Is Nothing And Not actualItem Is Nothing) _
+			Or (Not expectedItem Is Nothing And actualItem Is Nothing) Then
+				failedItemName = itemName
 				GoTo endh
-			ElseIf item1 Is Nothing And item2 Is Nothing Then
-				GoTo ReturnTrue
-			ElseIf item1.Type <> item2.Type Then
+			ElseIf expectedItem Is Nothing And actualItem Is Nothing Then
+				GoTo nextItem
+			ElseIf expectedItem.Type <> actualItem.Type Then
+				failedItemName = itemName
 				GoTo endh
 			End If
 						
-			Dim value1 As Variant
-			Dim value2 As Variant
+			Dim expectedValue As Variant
+			Dim actualValue As Variant
 			
-			value1 = doc1.Getitemvalue(Itemname)
-			value2 = doc2.Getitemvalue(itemName)
-			If UBound(value1) <> UBound(value2) Then GoTo endh
+			expectedValue = expected.Getitemvalue(Itemname)
+			actualValue = actual.Getitemvalue(itemName)
+			If UBound(expectedValue) <> UBound(actualValue) Then
+				failedItemName = itemName
+				GoTo endh
+			End If			
 			
 			Dim i%
-			For i = 0 To UBound(value1)
-				If value1(i) <> value2(i) Then GoTo endh
+			For i = 0 To UBound(expectedValue)
+				If expectedValue(i) <> actualValue(i) Then
+					failedItemName = itemName
+					GoTo endh
+				End if
 			Next
+			
+nextItem:
 		End ForAll
 		
-ReturnTrue:
 		Matches = True
 		
 		GoTo endh
@@ -163,30 +180,60 @@ ErrorHandler:
 		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
 endh:
 	End Function
+	
+	Public Function GetExpectedAndActualAsString() As String
+		On Error GoTo ErrorHandler
+		Const FuncName = "DocumentItemsMatcher.GetExpectedAndActualAsString ()"
+		
+		GetExpectedAndActualAsString = "Expected: " & Me.GetItemValue(expected, failedItemName) & _
+		Chr(10) & "Actual: " & Me.GetItemValue(actual, failedItemName)
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", стр. " & Erl & Chr(10) & Error$
+endh:
+	End Function
+	
+	Private Function GetItemValue(document As NotesDocument, itemName As String) As String
+		On Error GoTo ErrorHandler
+		Const FuncName = "DocumentItemsMatcher.GetItemValue ()"
+		
+		Dim item As NotesItem
+		Dim result As String
+		
+		Set item = document.Getfirstitem(itemName)
+		If item Is Nothing Then
+			result = "<no itemName: " & itemName & ">"
+		Else
+			result = "Name: " & itemName & "Type: " & item.Type & ". Values = {" & Implode(item.Values, ",") & "}"
+		End If
+		
+		GetItemValue = "...[" & result & "]..."
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", стр. " & Erl & Chr(10) & Error$
+endh:
+	End Function
 
 End Class
-'*** DatabaseMatcher ***
-%REM
-	Description: 
-%END REM
 Class DatabaseMatcher As IMatcher
 	
-	Private db1 As NotesDatabase
-	Private db2 As NotesDatabase
+	Private expected As NotesDatabase
+	Private actual As NotesDatabase
 	
-	'New
-	%REM
-		Description: 
-	%END REM
-	Public Sub New(db1 As NotesDatabase, db2 As NotesDatabase)
+	Private expectedServerName As NotesName
+	Private actualServerName As NotesName
+	
+	Public Sub New(expected As NotesDatabase, actual As NotesDatabase)
 		On Error GoTo ErrorHandler
 		Const FuncName = "DatabaseMatcher.New ()"
 		
-		If db1 Is Nothing Then Error LS_TEST_ERROR_MATCHER_PARAM, {db1 is Nothing}
-		If db2 Is Nothing Then Error LS_TEST_ERROR_MATCHER_PARAM, {db2 is Nothing}
+		If expected Is Nothing Then Error LS_TEST_ERROR_MATCHER_PARAM, {expected is Nothing}
+		If actual Is Nothing Then Error LS_TEST_ERROR_MATCHER_PARAM, {actual is Nothing}
 		
-		Set Me.db1 = db1
-		Set Me.db2 = db2
+		Set Me.expected = expected
+		Set Me.actual = actual
 		
 		GoTo endh
 ErrorHandler:
@@ -202,13 +249,13 @@ endh:
 		On Error GoTo ErrorHandler
 		Const FuncName = "DatabaseMatcher.Matches ()"
 		
-		Dim dbServer1 As New NotesName(db1.Server)
-		Dim dbServer2 As New NotesName(db2.Server)
+		Set Me.expectedServerName = New NotesName(expected.Server)
+		Set Me.actualServerName = New NotesName(actual.Server)
 		
-		If LCase(dbServer1.Canonical) <> LCase(dbServer2.Canonical) Or _
-		db1.Replicaid <> db2.Replicaid Or _
-		db1.Filepath <> db2.Filepath Or _
-		db1.Title <> db2.Title Then GoTo endh
+		If LCase(expectedServerName.Canonical) <> LCase(actualServerName.Canonical) Or _
+		expected.Replicaid <> actual.Replicaid Or _
+		expected.Filepath <> actual.Filepath Or _
+		expected.Title <> actual.Title Then GoTo endh
 		
 		Matches = True
 		
@@ -217,30 +264,41 @@ ErrorHandler:
 		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
 endh:
 	End Function
+	
+	Public Function GetExpectedAndActualAsString() As String
+		Dim expectedString As String
+		expectedString = "Expected: " & Me.DatabaseAsString(expected, expectedServerName)
+		Dim actualString As String
+		actualString = "Actual: " & Me.DatabaseAsString(actual, actualServerName)
+		GetExpectedAndActualAsString = expectedString & Chr(10) & actualString
+	End Function
+	
+	Private Function DatabaseAsString(db As NotesDatabase, dbServer As NotesName) As String
+		DatabaseAsString = db.Title & " (" & UCase(dbServer.Canonical) & "; " & _
+		db.Replicaid & "; " & db.Filepath & ")"
+	End Function
 
 End Class
-'*** DocumentMatcher ***
-%REM
-	Description: 
-%END REM
 Class DocumentMatcher As IMatcher
 	
-	Private doc1 As NotesDocument
-	Private doc2 As NotesDocument
+	Private expected As NotesDocument
+	Private actual As NotesDocument
 	
-	'New
-	%REM
-		Description: 
-	%END REM
-	Public Sub New(doc1 As NotesDocument, doc2 As NotesDocument)
+	Private failUniversalId As Boolean
+	Private failDatabase As String
+	Private failItemsCount As Boolean
+	Private failDifferentItems As String
+	Private failItemValues As String
+	
+	Public Sub New(expected As NotesDocument, actual As NotesDocument)
 		On Error GoTo ErrorHandler
 		Const FuncName = "DocumentMatcher.New ()"
 		
-		If doc1 Is Nothing Then Error LS_TEST_ERROR_MATCHER_PARAM, {doc1 is Nothing}
-		If doc2 Is Nothing Then Error LS_TEST_ERROR_MATCHER_PARAM, {doc2 is Nothing}
+		If expected Is Nothing Then Error LS_TEST_ERROR_MATCHER_PARAM, {expected is Nothing}
+		If actual Is Nothing Then Error LS_TEST_ERROR_MATCHER_PARAM, {actual is Nothing}
 		
-		Set Me.doc1 = doc1
-		Set Me.doc2 = doc2
+		Set Me.expected = expected
+		Set Me.actual = actual
 		
 		GoTo endh
 ErrorHandler:
@@ -248,45 +306,55 @@ ErrorHandler:
 endh:
 	End Sub
 	
-	'Matches
-	%REM
-		Description: 
-	%END REM
 	Public Function Matches() As Boolean
 		On Error GoTo ErrorHandler
 		Const FuncName = "DocumentMatcher.Matches ()"
 		
-		If doc1.Universalid <> doc2.Universalid Then GoTo endh
+		If expected.Universalid <> actual.Universalid Then
+			failUniversalId = True
+			GoTo endh
+		End If
 		
-		Dim dbMatcher As New DatabaseMatcher(doc1.Parentdatabase, doc2.Parentdatabase)
-		If Not dbMatcher.Matches() Then GoTo endh
+		Dim dbMatcher As New DatabaseMatcher(expected.Parentdatabase, actual.Parentdatabase)
+		If Not dbMatcher.Matches() Then
+			failDatabase = dbMatcher.GetExpectedAndActualAsString()
+			GoTo endh
+		End If
 		
-		Dim items1 As Variant
-		Dim items2 As Variant
+		Dim expectedItems As Variant
+		Dim actualItems As Variant
 		
-		items1 = doc1.Items
-		items2 = doc2.Items		
+		expectedItems = expected.Items
+		actualItems = actual.Items		
 		
-		If (IsArray(items1) And Not IsArray(items2)) Or _
-		(Not IsArray(items2) And IsArray(items2)) Then GoTo endh
+		If (IsArray(expectedItems) And Not IsArray(actualItems)) Or _
+		(Not IsArray(actualItems) And IsArray(actualItems)) Then GoTo endh
 		
-		If IsArray(items1) And IsArray(items2) Then
-			If UBound(items1) <> UBound(items2) Then GoTo endh
+		If IsArray(expectedItems) And IsArray(actualItems) Then
+			If UBound(expectedItems) <> UBound(actualItems) Then
+				failItemsCount = True
+				GoTo endh
+			End If
 			
 			Dim i%
-			Dim itemsList1 List As Boolean
-			For i = 0 To UBound(items1)
-				itemsList1(items1(i).Name) = False
+			Dim expectedItemsList List As Boolean
+			For i = 0 To UBound(expectedItems)
+				expectedItemsList(expectedItems(i).Name) = False
 			Next
 			
-			Dim itemNames2() As String
-			ReDim itemNames2 (0 To UBound(items2))
-			For i = 0 To UBound(items2)
-				If Not IsElement(itemsList1(items2(i).Name)) Then GoTo endh
-				itemNames2(i) = items2(i).Name
+			ReDim actualItemNames (0 To UBound(actualItems))
+			For i = 0 To UBound(actualItems)
+				If Not IsElement(expectedItemsList(actualItems(i).Name)) Then
+					failDifferentItems = "Not expected item in actual: " & actualItems(i).Name
+					GoTo endh
+				End If
+				actualItemNames(i) = actualItems(i).Name
 			Next
-			Dim docItemsMatcher As New DocumentItemsMatcher(doc1, doc2, itemNames2)
-			If Not docItemsMatcher.Matches() Then GoTo endh
+			Dim docItemsMatcher As New DocumentItemsMatcher(expected, actual, actualItemNames)
+			If Not docItemsMatcher.Matches() Then
+				failItemValues = docItemsMatcher.GetExpectedAndActualAsString()
+				GoTo endh
+			End If
 		End If
 		
 		Matches = True
@@ -296,5 +364,156 @@ ErrorHandler:
 		Error Err, "(" & DESIGN & ") " & FuncName & ", line " & Erl & Chr(10) & Error$
 endh:
 	End Function
+	
+	Public Function GetExpectedAndActualAsString() As String
+		On Error GoTo ErrorHandler
+		Const FuncName = "DocumentMatcher.GetExpectedAndActualAsString ()"
+		
+		Dim result As String
+		
+		If failUniversalId Then
+			result = "UniversalID diffirence." & Chr(10) & "Expected: " & expected.Universalid & Chr(10) & "Actual: " & actual.Universalid
+		ElseIf failDatabase <> "" Then
+			result = "Database difference." & Chr(10) & failDatabase
+		ElseIf failItemsCount Then
+			result = "Different items count." & Chr(10) & "Expected: " & (UBound(expected.Items) + 1) & Chr(10) & "Actual: " & (UBound(actual.Items) + 1)
+		ElseIf failDifferentItems <> "" Then
+			result = "Different items. " & failDifferentItems
+		ElseIf failItemValues <> "" Then
+			result = "Item values difference." & Chr(10) & failItemValues
+		Else
+			result = "Some mistery...:)"
+		End If
+		
+		GetExpectedAndActualAsString = result
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", стр. " & Erl & Chr(10) & Error$
+endh:
+	End Function
 
 End Class
+Class MatcherFactory
+	
+	Public Function SimpleValue(expected As Variant, actual As Variant) As SimpleValueMatcher
+		On Error GoTo ErrorHandler
+		Const FuncName = "SimpleValue.MatcherFactory ()"
+		
+		Set SimpleValue = New SimpleValueMatcher(expected, actual)
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", стр. " & Erl & Chr(10) & Error$
+endh:
+	End Function
+	
+	Public Function ArraySimpleValue(expected As Variant, actual As Variant) As ArraySimpleValueMatcher
+		On Error GoTo ErrorHandler
+		Const FuncName = "SimpleValue.ArraySimpleValue ()"
+		
+		Set ArraySimpleValue = New ArraySimpleValueMatcher(Expected, Actual)
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", стр. " & Erl & Chr(10) & Error$
+endh:
+	End Function
+
+End Class
+Class ArraySimpleValueMatcher As IMatcher
+	
+	Private expected As Variant
+	Private actual As Variant
+	
+	Public Sub New(expected As Variant, actual As Variant)
+		On Error GoTo ErrorHandler
+		Const FuncName = "ArraySimpleValueMatcher.New ()"
+		
+		If Not IsArray(expected) Then Error LS_TEST_ERROR_MATCHER_PARAM, "expected is not an array."
+		If Not IsArray(actual) Then Error LS_TEST_ERROR_MATCHER_PARAM, "actual is not an array."
+		
+		Me.expected = expected
+		Me.actual = actual
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", стр. " & Erl & Chr(10) & Error$
+endh:
+	End Sub
+	
+	Public Function Matches() As Boolean
+		On Error GoTo ErrorHandler
+		Const FuncName = "ArraySimpleValueMatcher.Matches ()"
+		
+		If LBound(expected) <> LBound(actual) _
+		Or UBound(expected) <> UBound(actual) _
+		Or Me.GetLength(expected) <> Me.GetLength(actual) Then
+			GoTo endh
+		End If
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", стр. " & Erl & Chr(10) & Error$
+endh:
+	End Function
+	
+	Public Function GetExpectedAndActualAsString() As String
+		On Error GoTo ErrorHandler
+		Const FuncName = "ArraySimpleValueMatcher.GetExpectedAndActualAsString ()"
+		
+		GetExpectedAndActualAsString = "Expected: " & Me.GetArrayInfo(expected) & Chr(10) & "Actual: " & Me.GetArrayInfo(actual)
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", стр. " & Erl & Chr(10) & Error$
+endh:
+	End Function
+	
+	Private Function GetLength(array As Variant) As Integer
+		GetLength = UBound(array) - LBound(array) + 1
+	End Function
+	
+	Private Function GetArrayInfo(array As Variant) As String
+		On Error GoTo ErrorHandler
+		Const FuncName = "ArraySimpleValueMatcher.GetArrayInfo ()"
+		
+		Dim result As String
+		
+		Dim lowerBound As Integer
+		Dim upperBound As Integer
+		lowerBound = LBound(array)
+		upperBound = UBound(array)
+		
+		If lowerBound <> 0 Then
+			result = "LBound = " & LBound(array) & ", UBound = " & UBound(array) & ", "
+		End If
+		result = result & "Length = " & Me.GetLength(Array) & ", Values = {" & Implode(array, ",") & "}"
+		
+		GetArrayInfo = result
+		
+		GoTo endh
+ErrorHandler:
+		Error Err, "(" & DESIGN & ") " & FuncName & ", стр. " & Erl & Chr(10) & Error$
+endh:
+	End Function
+
+End Class
+'++LotusScript Development Environment:2:1:MatcherFactory:1:8
+Static Public Function MatcherFactory() As MatcherFactory
+	On Error GoTo ErrorHandler
+	Const FuncName = "MatcherFactory ()"
+	
+	Static this As MatcherFactory
+	
+	If this Is Nothing Then
+		Set this = New MatcherFactory()
+	End If
+	
+	Set MatcherFactory = this
+	
+	GoTo endh
+ErrorHandler:
+	Error Err, "(" & DESIGN & ") " & FuncName & ", стр. " & Erl & Chr(10) & Error$
+endh:
+End Function
