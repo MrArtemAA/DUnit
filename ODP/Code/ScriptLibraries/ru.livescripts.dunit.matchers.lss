@@ -452,6 +452,13 @@ endh:
 			GoTo endh
 		End If
 		
+		Dim i%
+		For i = LBound(expected) To UBound(expected)
+			If expected(i) <> actual(i) Then GoTo endh
+		Next
+		
+		Matches = True
+		
 		GoTo endh
 ErrorHandler:
 		Error Err, "(" & DESIGN & ") " & FuncName & ", стр. " & Erl & Chr(10) & Error$
@@ -517,3 +524,4 @@ ErrorHandler:
 	Error Err, "(" & DESIGN & ") " & FuncName & ", стр. " & Erl & Chr(10) & Error$
 endh:
 End Function
+
